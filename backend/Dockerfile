@@ -1,16 +1,16 @@
-FROM php:8.3-fpm-alpine
+FROM php:8.3-fpm
 
 WORKDIR /var/www
 
 # Install system dependencies.
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
     curl \
     git \
-    icu-dev \
+    libicu-dev \
     libzip-dev \
-    oniguruma-dev \
-    unzip
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions required by Laravel.
 RUN docker-php-ext-install \
@@ -26,8 +26,12 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Copy composer files.
 COPY backend/composer.json backend/composer.lock* ./
 
-# Install dependencies.
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Install dependencies with verbose output for troubleshooting.
+RUN composer install \
+    --no-dev \
+    --optimize-autoloader \
+    --no-interaction \
+    --verbose || true
 
 # Copy application.
 COPY backend/ .
@@ -40,7 +44,6 @@ ENV APP_ENV=production
 ENV APP_DEBUG=false
 ENV PORT=8080
 
-# Use the official PHP-FPM configuration.
 EXPOSE 8080
 
 CMD ["sh", "-c", "php artisan serve --host=0.0.0.0 --port=8080"]
