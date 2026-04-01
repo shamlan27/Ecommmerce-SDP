@@ -23,12 +23,12 @@ RUN apk add --no-cache \
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Copy dependency manifests first for better Docker layer caching.
-COPY composer.json ./
-COPY composer.lock* ./
+COPY backend/composer.json ./
+COPY backend/composer.lock* ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
 # Copy application code.
-COPY . .
+COPY backend/ .
 
 # Ensure writable Laravel directories exist.
 RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache \
