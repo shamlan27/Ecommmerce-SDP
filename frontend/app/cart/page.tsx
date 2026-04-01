@@ -1,12 +1,14 @@
 'use client';
 
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency, getImageUrl } from '@/lib/utils';
 import Link from 'next/link';
 import { Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, subtotal } = useCart();
+  const { user } = useAuth();
 
   if (!items || items.length === 0) {
     return (
@@ -93,9 +95,23 @@ export default function CartPage() {
               <span className="text-2xl font-bold text-primary">{formatCurrency(subtotal)}</span>
             </div>
 
-            <Link href="/checkout" className="w-full flex items-center justify-center gap-2 py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors btn-press shadow-md shadow-primary/20">
-              Proceed to Checkout <ArrowRight className="w-4 h-4" />
-            </Link>
+            {user ? (
+              <Link href="/checkout" className="w-full flex items-center justify-center gap-2 py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors btn-press shadow-md shadow-primary/20">
+                Proceed to Checkout <ArrowRight className="w-4 h-4" />
+              </Link>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted text-center">Please sign in or create an account to continue checkout.</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link href="/login?redirect=/checkout" className="w-full text-center py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors">
+                    Sign In
+                  </Link>
+                  <Link href="/register" className="w-full text-center py-3 border border-border font-bold rounded-xl hover:bg-surface transition-colors">
+                    Sign Up
+                  </Link>
+                </div>
+              </div>
+            )}
 
             <div className="mt-4 text-center">
               <Link href="/products" className="text-sm font-semibold text-muted hover:text-primary transition-colors">Continue Shopping</Link>

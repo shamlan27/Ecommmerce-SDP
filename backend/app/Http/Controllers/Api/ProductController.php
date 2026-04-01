@@ -113,4 +113,29 @@ class ProductController extends Controller
 
         return response()->json($brands);
     }
+
+    public function compare(Request $request)
+    {
+        $ids = collect(explode(',', (string) $request->input('ids', '')))
+            ->map(fn ($id) => (int) trim($id))
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->take(4)
+            ->values();
+
+        if ($ids->count() < 2) {
+            return response()->json(['message' => 'Select at least two products to compare.'], 422);
+        }
+
+        $products = Product::with(['category', 'primaryImage'])
+            ->whereIn('id', $ids)
+            ->where('is_active', true)
+            ->get()
+            ->sortBy(fn ($product) => $ids->search($product->id))
+            ->values();
+
+        return response()->json([
+            'products' => $products,
+        ]);
+    }
 }

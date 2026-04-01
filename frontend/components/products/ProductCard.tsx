@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { formatCurrency, getImageUrl } from '@/lib/utils';
 import type { Product } from '@/lib/types';
-import { ShoppingCart, Star } from 'lucide-react';
+import { ShoppingCart, Star, Scale } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 interface Props {
   product: Product;
@@ -12,8 +14,30 @@ interface Props {
 
 export default function ProductCard({ product }: Props) {
   const { addToCart } = useCart();
+  const { user } = useAuth();
+  const router = useRouter();
   const primaryImage = product.primary_image?.image_path || product.images?.[0]?.image_path;
   const imageSrc = getImageUrl(primaryImage);
+
+  const handleQuickAdd = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+
+    if (!user) {
+      router.push('/login?redirect=/products');
+      return;
+    }
+
+    await addToCart(product.id, 1);
+  };
+
+  const addToCompare = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    const key = 'compare_product_ids';
+    const current = JSON.parse(localStorage.getItem(key) || '[]') as number[];
+    const merged = Array.from(new Set([...current, product.id])).slice(-4);
+    localStorage.setItem(key, JSON.stringify(merged));
+    router.push(`/products/compare?ids=${merged.join(',')}`);
+  };
 
   return (
     <div className="group relative bg-background border border-border rounded-2xl overflow-hidden card-hover flex flex-col h-full">
@@ -38,7 +62,7 @@ export default function ProductCard({ product }: Props) {
         {/* Quick Add overlay */}
         <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 transform translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
           <button
-            onClick={(e) => { e.preventDefault(); addToCart(product.id, 1); }}
+            onClick={handleQuickAdd}
             disabled={product.stock_quantity === 0}
             className="w-full py-3 bg-white/90 backdrop-blur text-foreground font-semibold text-sm rounded-xl hover:bg-primary hover:text-white transition-colors flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
           >
@@ -74,6 +98,13 @@ export default function ProductCard({ product }: Props) {
               <span className="font-bold text-lg leading-none">{formatCurrency(Number(product.price))}</span>
             )}
           </div>
+          <button
+            onClick={addToCompare}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border text-xs font-semibold hover:bg-surface transition-colors"
+            title="Compare product"
+          >
+            <Scale className="w-3.5 h-3.5" /> Compare
+          </button>
         </div>
       </div>
     </div>

@@ -4,20 +4,33 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\MarketingWebhookService;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    public function __construct(private readonly MarketingWebhookService $marketing)
+    {
+    }
+
     public function register(Request $request)
     {
+        $request->merge([
+            'email' => strtolower(trim((string) $request->input('email'))),
+        ]);
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'required|string|max:20',
         ]);
 
         $user = User::create([
@@ -26,9 +39,12 @@ class AuthController extends Controller
             'password' => $request->password,
             'phone' => $request->phone,
             'role' => 'customer',
+            'profile_completed' => false,
         ]);
 
         $token = $user->createToken('auth-token')->plainTextToken;
+
+        $this->marketing->syncCustomerRegistered($user);
 
         return response()->json([
             'user' => $user,
@@ -38,6 +54,10 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
+        $request->merge([
+            'email' => strtolower(trim((string) $request->input('email'))),
+        ]);
+
         $request->validate([
             'email' => 'required|string|email',
             'password' => 'required|string',
@@ -59,6 +79,60 @@ class AuthController extends Controller
         ]);
     }
 
+    public function forgotPassword(Request $request)
+    {
+        $request->merge([
+            'email' => strtolower(trim((string) $request->input('email'))),
+        ]);
+
+        $request->validate([
+            'email' => 'required|string|email',
+        ]);
+
+        Password::sendResetLink([
+            'email' => $request->email,
+        ]);
+
+        return response()->json([
+            'message' => 'If an account with that email exists, a password reset link has been sent.',
+        ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->merge([
+            'email' => strtolower(trim((string) $request->input('email'))),
+        ]);
+
+        $request->validate([
+            'token' => 'required|string',
+            'email' => 'required|string|email',
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password) {
+                $user->forceFill([
+                    'password' => $password,
+                    'remember_token' => Str::random(60),
+                ])->save();
+
+                event(new PasswordReset($user));
+            }
+        );
+
+        if ($status !== Password::PASSWORD_RESET) {
+            return response()->json([
+                'message' => __($status),
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'Password has been reset successfully. Please sign in.',
+        ]);
+    }
+
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
@@ -75,12 +149,62 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'sometimes|string|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'sometimes|required|string|max:20',
             'avatar' => 'nullable|string',
+            'payment_preferences' => 'nullable|array',
         ]);
 
-        $request->user()->update($request->only(['name', 'phone', 'avatar']));
+        $request->user()->update($request->only(['name', 'phone', 'avatar', 'payment_preferences']));
 
         return response()->json($request->user());
+    }
+
+    public function completeProfile(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+            'payment_preferences' => 'required|array',
+            'payment_preferences.default_method' => 'required|string|in:card,paypal,bank_transfer,cod',
+            'shipping' => 'required|array',
+            'shipping.name' => 'required|string|max:255',
+            'shipping.line1' => 'required|string|max:255',
+            'shipping.line2' => 'nullable|string|max:255',
+            'shipping.city' => 'required|string|max:255',
+            'shipping.state' => 'required|string|max:255',
+            'shipping.zip' => 'required|string|max:20',
+            'shipping.country' => 'sometimes|string|max:2',
+            'shipping.phone' => 'nullable|string|max:20',
+        ]);
+
+        $user = $request->user();
+
+        DB::transaction(function () use ($request, $user) {
+            $user->update([
+                'name' => $request->name,
+                'phone' => $request->phone,
+                'payment_preferences' => $request->payment_preferences,
+                'profile_completed' => true,
+            ]);
+
+            $user->addresses()
+                ->where('type', 'shipping')
+                ->update(['is_default' => false]);
+
+            $user->addresses()->create([
+                'type' => 'shipping',
+                'name' => $request->input('shipping.name'),
+                'line1' => $request->input('shipping.line1'),
+                'line2' => $request->input('shipping.line2'),
+                'city' => $request->input('shipping.city'),
+                'state' => $request->input('shipping.state'),
+                'zip' => $request->input('shipping.zip'),
+                'country' => strtoupper($request->input('shipping.country', 'US')),
+                'phone' => $request->input('shipping.phone'),
+                'is_default' => true,
+            ]);
+        });
+
+        return response()->json($user->fresh()->load('addresses'));
     }
 }

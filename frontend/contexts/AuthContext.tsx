@@ -9,7 +9,7 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, passwordConfirmation: string) => Promise<void>;
+  register: (name: string, email: string, password: string, passwordConfirmation: string, phone?: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (user: User) => void;
 }
@@ -22,19 +22,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem('auth_token');
-    if (savedToken) {
-      setToken(savedToken);
-      api.get<User>('/user', { token: savedToken })
-        .then(setUser)
-        .catch(() => {
-          localStorage.removeItem('auth_token');
-          setToken(null);
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+    const initializeAuth = async () => {
+      const savedToken = localStorage.getItem('auth_token');
+
+      if (!savedToken) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const currentUser = await api.get<User>('/user', { token: savedToken });
+        setToken(savedToken);
+        setUser(currentUser);
+      } catch {
+        localStorage.removeItem('auth_token');
+        setToken(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -44,12 +52,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
   };
 
-  const register = async (name: string, email: string, password: string, passwordConfirmation: string) => {
+  const register = async (name: string, email: string, password: string, passwordConfirmation: string, phone?: string) => {
     const res = await api.post<AuthResponse>('/register', {
       name,
       email,
       password,
       password_confirmation: passwordConfirmation,
+      phone,
     });
     localStorage.setItem('auth_token', res.token);
     setToken(res.token);

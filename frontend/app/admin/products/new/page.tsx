@@ -5,13 +5,22 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import type { Category } from '@/lib/types';
+import { getImageUrl } from '@/lib/utils';
 import { ArrowLeft, Save, UploadCloud } from 'lucide-react';
 
 export default function NewProductAdmin() {
     const router = useRouter();
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(false);
+    const [uploadingImage, setUploadingImage] = useState(false);
     const [error, setError] = useState('');
+    const [imageUrl, setImageUrl] = useState('');
+    const [images, setImages] = useState<string[]>([]);
+
+    const isLikelyImageUrl = (value: string): boolean => {
+        const url = value.toLowerCase();
+        return /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(url) || url.includes('images.unsplash.com');
+    };
     
     useEffect(() => {
         api.get<Category[]>('/categories').then(setCategories);
@@ -28,12 +37,98 @@ export default function NewProductAdmin() {
         setLoading(true);
         setError('');
         try {
-            await api.post('/admin/products', {...form, price: Number(form.price), stock_quantity: Number(form.stock_quantity), category_id: Number(form.category_id)});
+            await api.post('/admin/products', {
+                ...form,
+                price: Number(form.price),
+                stock_quantity: Number(form.stock_quantity),
+                category_id: Number(form.category_id),
+                images,
+            });
             router.push('/admin/products');
-        } catch (err: any) {
-            setError(err.data?.message || 'Failed to create product');
+        } catch (err: unknown) {
+            if (typeof err === 'object' && err !== null && 'data' in err) {
+                const data = (err as { data?: { message?: string } }).data;
+                setError(data?.message || 'Failed to create product');
+            } else {
+                setError('Failed to create product');
+            }
         }
         setLoading(false);
+    };
+
+    const addImage = () => {
+        const value = imageUrl.trim();
+        if (!value) return;
+
+        if (!/^https?:\/\//i.test(value) || !isLikelyImageUrl(value)) {
+            setError('Please add a direct image URL (jpg, png, webp, etc.), not a product page link.');
+            return;
+        }
+
+        setError('');
+        setImages((prev) => [...prev, value]);
+        setImageUrl('');
+    };
+
+    const uploadImageFile = async (file: File) => {
+        const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+        const token = localStorage.getItem('auth_token');
+
+        if (!token) {
+            throw new Error('Please sign in again to upload images.');
+        }
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const response = await fetch(`${apiBase}/admin/products/upload-image`, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            const message = typeof data?.message === 'string' ? data.message : 'Failed to upload image.';
+            throw new Error(message);
+        }
+
+        if (!data?.path) {
+            throw new Error('Upload succeeded but no image path was returned.');
+        }
+
+        return data.path as string;
+    };
+
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files?.length) return;
+
+        setUploadingImage(true);
+        setError('');
+
+        try {
+            const uploadedPaths: string[] = [];
+            for (const file of Array.from(files)) {
+                const path = await uploadImageFile(file);
+                uploadedPaths.push(path);
+            }
+            setImages((prev) => [...prev, ...uploadedPaths]);
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Failed to upload image.';
+            setError(message);
+        } finally {
+            setUploadingImage(false);
+            e.target.value = '';
+        }
+    };
+
+    const removeImage = (index: number) => {
+        setImages((prev) => prev.filter((_, i) => i !== index));
     };
 
     return (
@@ -120,10 +215,62 @@ export default function NewProductAdmin() {
 
                     <div className="bg-background border border-border rounded-2xl p-6">
                         <h2 className="text-lg font-bold mb-4">Product Images</h2>
-                        <div className="border-2 border-dashed border-border rounded-xl p-8 text-center bg-surface hover:bg-surface-hover transition-colors cursor-pointer group">
-                            <UploadCloud className="w-8 h-8 text-muted mx-auto mb-3 group-hover:text-primary transition-colors" />
-                            <p className="text-sm font-semibold">Click to upload images</p>
-                            <p className="text-xs text-muted mt-1">PNG, JPG, WebP up to 5MB</p>
+                        <div className="space-y-3">
+                            <div className="border-2 border-dashed border-border rounded-xl p-4 bg-surface">
+                                <UploadCloud className="w-6 h-6 text-muted mb-2" />
+                                <p className="text-sm font-semibold mb-2">Upload image file</p>
+                                <label className="w-full block cursor-pointer">
+                                    <input
+                                        type="file"
+                                        accept="image/png,image/jpeg,image/webp,image/gif"
+                                        multiple
+                                        onChange={handleFileSelect}
+                                        className="hidden"
+                                    />
+                                    <div className="w-full text-center px-3 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors">
+                                        {uploadingImage ? 'Uploading...' : 'Choose Image Files'}
+                                    </div>
+                                </label>
+                                <p className="text-xs text-muted mt-2">Files are stored in backend public storage.</p>
+                            </div>
+
+                            <div className="border-2 border-dashed border-border rounded-xl p-4 bg-surface">
+                                <p className="text-sm font-semibold mb-2">Or add image URL</p>
+                                <div className="flex gap-2">
+                                    <input
+                                        value={imageUrl}
+                                        onChange={(e) => setImageUrl(e.target.value)}
+                                        placeholder="https://example.com/image.jpg"
+                                        className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary/50"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={addImage}
+                                        className="px-3 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors"
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+                                <p className="text-xs text-muted mt-2">First image becomes primary.</p>
+                            </div>
+
+                            {images.length > 0 && (
+                                <div className="space-y-2">
+                                    {images.map((img, idx) => (
+                                        <div key={`${img}-${idx}`} className="flex items-center gap-2 p-2 border border-border rounded-lg bg-surface">
+                                            <img src={getImageUrl(img)} alt="" className="w-10 h-10 rounded object-cover border border-border" />
+                                            <span className="text-xs font-mono truncate flex-1">{img}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeImage(idx)}
+                                                className="text-xs px-2 py-1 rounded bg-danger/10 text-danger hover:bg-danger/20"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
 

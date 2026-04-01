@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
@@ -22,9 +23,12 @@ use Illuminate\Support\Facades\Route;
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 // Public product & category routes
 Route::get('/products', [ProductController::class, 'index']);
+Route::get('/products/compare', [ProductController::class, 'compare']);
 Route::get('/products/{slug}', [ProductController::class, 'show']);
 Route::get('/products/{product}/reviews', [ReviewController::class, 'index']);
 Route::get('/brands', [ProductController::class, 'brands']);
@@ -37,6 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
     Route::put('/user/profile', [AuthController::class, 'updateProfile']);
+    Route::post('/user/complete-profile', [AuthController::class, 'completeProfile']);
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index']);
@@ -54,7 +59,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders/{order}', [OrderController::class, 'show']);
     Route::get('/orders/{order}/tracking', [OrderController::class, 'tracking']);
 
+    // Payments
+    Route::post('/payments/intent', [PaymentController::class, 'createIntent']);
+
     // Reviews
+    Route::get('/products/{product}/can-review', [ReviewController::class, 'canReview']);
     Route::post('/products/{product}/reviews', [ReviewController::class, 'store']);
     Route::put('/reviews/{review}', [ReviewController::class, 'update']);
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy']);
@@ -84,6 +93,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/reports/sales', [ReportController::class, 'salesReport']);
 
         Route::get('/products', [AdminProductController::class, 'index']);
+        Route::post('/products/upload-image', [AdminProductController::class, 'uploadImage']);
         Route::post('/products', [AdminProductController::class, 'store']);
         Route::get('/products/{product}', [AdminProductController::class, 'show']);
         Route::put('/products/{product}', [AdminProductController::class, 'update']);
@@ -92,6 +102,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/orders', [AdminOrderController::class, 'index']);
         Route::get('/orders/{order}', [AdminOrderController::class, 'show']);
         Route::put('/orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
+        Route::post('/orders/{order}/sync-tracking', [AdminOrderController::class, 'syncTracking']);
 
         Route::get('/users', [AdminUserController::class, 'index']);
         Route::get('/users/{user}', [AdminUserController::class, 'show']);

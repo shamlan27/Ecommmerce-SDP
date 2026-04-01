@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -21,6 +22,8 @@ class User extends Authenticatable
         'role',
         'phone',
         'avatar',
+        'profile_completed',
+        'payment_preferences',
     ];
 
     protected $hidden = [
@@ -33,7 +36,16 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'profile_completed' => 'boolean',
+            'payment_preferences' => 'array',
         ];
+    }
+
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            set: static fn (?string $value) => $value !== null ? strtolower(trim($value)) : null,
+        );
     }
 
     public function isAdmin(): bool

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import type { DashboardData } from '@/lib/types';
-import { formatCurrency, formatDate, getStatusColor, getImageUrl } from '@/lib/utils';
+import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils';
 import { Package, DollarSign, Clock, MessageSquare, ArrowRight, Heart, TrendingUp, ShoppingBag } from 'lucide-react';
 import ProductCard from '@/components/products/ProductCard';
 
@@ -28,7 +28,7 @@ export default function DashboardPage() {
   if (loading || !data) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">{[...Array(4)].map((_,i) => <div key={i} className="h-24 skeleton rounded-2xl" />)}</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">{[...Array(4)].map((_, i) => <div key={i} className="h-24 skeleton rounded-2xl" />)}</div>
         <div className="h-64 skeleton rounded-2xl" />
       </div>
     );
@@ -43,13 +43,13 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
-      {/* Welcome */}
+
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {user.name.split(' ')[0]}! 👋</h1>
         <p className="text-muted mt-1">Here&apos;s what&apos;s happening with your account</p>
       </div>
 
-      {/* Stats */}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {stats.map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-background border border-border rounded-2xl p-5 card-hover">
@@ -62,7 +62,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Quick Actions */}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
         {[
           { href: '/products', label: 'Shop Now', icon: ShoppingBag },
@@ -77,7 +77,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Recent Orders */}
+
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold">Recent Orders</h2>
@@ -103,7 +103,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Recommended Products */}
+
       {data.recommended.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-4">
@@ -113,6 +113,34 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {data.recommended.slice(0, 4).map(product => (
               <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {data.active_promotions.length > 0 && (
+        <div className="mt-10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold">Active Promotions</h2>
+            <Link href="/products?sort_by=created_at&sort_order=desc" className="text-sm text-primary font-medium flex items-center gap-1">Browse Deals <ArrowRight className="w-3 h-3" /></Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {data.active_promotions.slice(0, 4).map(product => (
+              <ProductCard key={`promo-${product.id}`} product={product} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {data.wishlist_items.length > 0 && (
+        <div className="mt-10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold">Wishlist Picks</h2>
+            <Link href="/wishlist" className="text-sm text-primary font-medium flex items-center gap-1">View Wishlist <ArrowRight className="w-3 h-3" /></Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {data.wishlist_items.slice(0, 4).map(item => (
+              item.product ? <ProductCard key={`wish-${item.id}`} product={item.product} /> : null
             ))}
           </div>
         </div>

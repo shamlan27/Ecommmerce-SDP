@@ -35,4 +35,17 @@ return [
         ],
     ],
 
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+    ],
+
+    'logistics' => [
+        'webhook_url' => env('LOGISTICS_WEBHOOK_URL'),
+    ],
+
+    'marketing' => [
+        'webhook_url' => env('MARKETING_WEBHOOK_URL'),
+    ],
+
 ];

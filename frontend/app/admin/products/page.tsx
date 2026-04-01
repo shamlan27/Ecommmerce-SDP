@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import type { Product, PaginatedResponse } from '@/lib/types';
@@ -12,16 +12,20 @@ export default function AdminProducts() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  const fetchProducts = () => {
+  const fetchProducts = useCallback(() => {
     setLoading(true);
     api.get<PaginatedResponse<Product>>(`/admin/products?search=${search}&per_page=50`)
       .then(res => setProducts(res.data))
       .finally(() => setLoading(false));
-  };
+  }, [search]);
 
   useEffect(() => {
-    fetchProducts();
-  }, [search]);
+    const handle = setTimeout(() => {
+      fetchProducts();
+    }, 0);
+
+    return () => clearTimeout(handle);
+  }, [fetchProducts]);
 
     const toggleStatus = async (id: number, currentStatus: boolean) => {
       try {
@@ -103,7 +107,7 @@ export default function AdminProducts() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
-                      <button className="p-2 text-muted hover:text-primary bg-surface hover:bg-primary/10 rounded-lg transition-colors"><Edit className="w-4 h-4" /></button>
+                      <Link href={`/admin/products/${product.id}`} className="p-2 text-muted hover:text-primary bg-surface hover:bg-primary/10 rounded-lg transition-colors"><Edit className="w-4 h-4" /></Link>
                       <button onClick={() => deleteProduct(product.id)} className="p-2 text-muted hover:text-danger bg-surface hover:bg-danger/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
                     </div>
                   </td>

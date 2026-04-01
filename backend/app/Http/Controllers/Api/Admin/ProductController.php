@@ -10,6 +10,20 @@ use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
+    public function uploadImage(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpg,jpeg,png,webp,gif|max:5120',
+        ]);
+
+        $path = $request->file('image')->store('products', 'public');
+
+        return response()->json([
+            'path' => $path,
+            'url' => asset('storage/' . $path),
+        ], 201);
+    }
+
     public function index(Request $request)
     {
         $query = Product::with(['category', 'primaryImage']);
@@ -94,6 +108,8 @@ class ProductController extends Controller
             'is_active' => 'sometimes|boolean',
             'is_featured' => 'sometimes|boolean',
             'weight' => 'nullable|numeric|min:0',
+            'images' => 'sometimes|array',
+            'images.*' => 'string',
         ]);
 
         $data = $request->only([
@@ -107,6 +123,19 @@ class ProductController extends Controller
         }
 
         $product->update($data);
+
+        if ($request->has('images')) {
+            ProductImage::where('product_id', $product->id)->delete();
+
+            foreach ($request->input('images', []) as $index => $imagePath) {
+                ProductImage::create([
+                    'product_id' => $product->id,
+                    'image_path' => $imagePath,
+                    'is_primary' => $index === 0,
+                    'sort_order' => $index,
+                ]);
+            }
+        }
 
         return response()->json($product->load(['category', 'images']));
     }

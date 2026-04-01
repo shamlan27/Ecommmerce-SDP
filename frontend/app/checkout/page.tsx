@@ -6,10 +6,23 @@ import Link from 'next/link';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
+import type { PaymentIntentResponse } from '@/lib/types';
 import { formatCurrency, getImageUrl } from '@/lib/utils';
-import { CheckCircle, CreditCard, MapPin, Truck, ChevronRight } from 'lucide-react';
+import { CheckCircle, CreditCard, MapPin, Truck } from 'lucide-react';
+
+interface CreatedOrder {
+  id: number;
+}
 
 export default function CheckoutPage() {
+    const getErrorMessage = (err: unknown, fallback: string): string => {
+      if (typeof err === 'object' && err !== null && 'data' in err) {
+        const data = (err as { data?: { message?: string } }).data;
+        return data?.message || fallback;
+      }
+      return fallback;
+    };
+
   const router = useRouter();
   const { user } = useAuth();
   const { items, subtotal, clearCart, loading: cartLoading } = useCart();
@@ -17,9 +30,12 @@ export default function CheckoutPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [paymentIntentId, setPaymentIntentId] = useState('');
+  const [initializingPayment, setInitializingPayment] = useState(false);
   
   const [form, setForm] = useState({
     shipping_name: user?.name || '',
+    shipping_phone: user?.phone || '',
     shipping_country: 'US',
     shipping_address: '',
     shipping_city: '',
@@ -29,25 +45,59 @@ export default function CheckoutPage() {
     notes: ''
   });
 
+  const selectedBackendPaymentMethod = form.payment_method === 'credit_card' ? 'card' : 'cod';
+
   const shippingCost = 15;
   const taxRate = 0.08;
   const tax = subtotal * taxRate;
   const total = subtotal + shippingCost + tax;
 
+  const initializeCardPayment = async () => {
+    setInitializingPayment(true);
+    setError('');
+    try {
+      const payment = await api.post<PaymentIntentResponse>('/payments/intent', { currency: 'usd' });
+      setPaymentIntentId(payment.payment_intent_id);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Unable to initialize secure payment.'));
+    }
+    setInitializingPayment(false);
+  };
+
   const handleSubmitOrder = async () => {
     setLoading(true);
     setError('');
     try {
-      const order = await api.post<any>('/orders', { ...form, payment_method: 'card' }); // Mocking standard payment
+      const order = await api.post<CreatedOrder>('/orders', {
+        ...form,
+        payment_method: selectedBackendPaymentMethod,
+        payment_intent_id: selectedBackendPaymentMethod === 'card' ? paymentIntentId : undefined,
+      });
       await clearCart();
       router.push(`/orders/${order.id}`);
-    } catch (err: any) {
-      setError(err.data?.message || 'Failed to place order. Please try again.');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to place order. Please try again.'));
     }
     setLoading(false);
   };
 
   if (cartLoading) return <div className="max-w-5xl mx-auto px-4 py-20 text-center">Loading...</div>;
+  if (!user) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-20 text-center">
+        <h1 className="text-2xl font-bold mb-3">Sign in to continue checkout</h1>
+        <p className="text-muted mb-8">Please sign in or create an account first.</p>
+        <div className="flex items-center justify-center gap-3">
+          <Link href="/login?redirect=/checkout" className="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors">
+            Sign In
+          </Link>
+          <Link href="/register" className="px-6 py-3 border border-border font-bold rounded-xl hover:bg-surface transition-colors">
+            Sign Up
+          </Link>
+        </div>
+      </div>
+    );
+  }
   if (!items.length) {
     return <div className="max-w-3xl mx-auto px-4 py-20 text-center"><h1 className="text-2xl font-bold mb-4">Cart is empty</h1><Link href="/products" className="text-primary hover:underline">Return to Shop</Link></div>;
   }
@@ -94,6 +144,10 @@ export default function CheckoutPage() {
                     <input value={form.shipping_name} onChange={e => setForm({...form, shipping_name: e.target.value})} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/50 text-sm" placeholder="John Doe" />
                   </div>
                   <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold mb-1.5 ml-1">Phone Number</label>
+                    <input value={form.shipping_phone} onChange={e => setForm({...form, shipping_phone: e.target.value})} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/50 text-sm" placeholder="+1 (555) 000-0000" />
+                  </div>
+                  <div className="md:col-span-2">
                     <label className="block text-sm font-semibold mb-1.5 ml-1">Address</label>
                     <input value={form.shipping_address} onChange={e => setForm({...form, shipping_address: e.target.value})} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/50 text-sm" placeholder="123 Main St" />
                   </div>
@@ -119,22 +173,36 @@ export default function CheckoutPage() {
                 <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><CreditCard className="w-5 h-5 text-primary" /> Payment Method</h2>
                 
                 <div className="space-y-3">
-                  {['credit_card', 'paypal'].map(method => (
+                  {['credit_card', 'cod'].map(method => (
                     <label key={method} className={`flex items-center p-4 border rounded-xl cursor-pointer transition-colors ${form.payment_method === method ? 'border-primary bg-primary/5' : 'border-border bg-surface hover:bg-surface-hover'}`}>
                       <input type="radio" name="payment" checked={form.payment_method === method} onChange={() => setForm({...form, payment_method: method})} className="w-4 h-4 text-primary focus:ring-primary" />
-                      <span className="ml-3 font-semibold capitalize">{method.replace('_', ' ')}</span>
+                      <span className="ml-3 font-semibold capitalize">{method === 'cod' ? 'Cash on Delivery' : method.replace('_', ' ')}</span>
                     </label>
                   ))}
                 </div>
 
                 {form.payment_method === 'credit_card' && (
                   <div className="p-4 border border-border rounded-xl bg-surface space-y-4">
-                     <p className="text-sm text-muted mb-4">MOCK PAYMENT: No actual card details are verified.</p>
-                     <input placeholder="Card Number" className="w-full px-4 py-3 border border-border bg-background rounded-lg text-sm" />
-                     <div className="grid grid-cols-2 gap-4">
-                       <input placeholder="MM/YY" className="w-full px-4 py-3 border border-border bg-background rounded-lg text-sm" />
-                       <input placeholder="CVC" className="w-full px-4 py-3 border border-border bg-background rounded-lg text-sm" />
-                     </div>
+                    <p className="text-sm text-muted">Card checkout is handled by the payment gateway using a server-created payment intent.</p>
+                    <button
+                      onClick={initializeCardPayment}
+                      disabled={initializingPayment}
+                      className="w-full py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
+                    >
+                      {initializingPayment ? 'Initializing secure payment...' : paymentIntentId ? 'Payment Authorized' : 'Authorize Secure Card Payment'}
+                    </button>
+                    {paymentIntentId && (
+                      <p className="text-xs text-success">Payment intent created: {paymentIntentId}</p>
+                    )}
+                  </div>
+                )}
+
+                {form.payment_method === 'cod' && (
+                  <div className="p-4 border border-border rounded-xl bg-surface">
+                    <p className="text-sm text-muted flex items-start gap-2">
+                      <Truck className="w-4 h-4 mt-0.5" />
+                      Pay when your order is delivered. No online payment is required now.
+                    </p>
                   </div>
                 )}
                 
@@ -158,14 +226,21 @@ export default function CheckoutPage() {
                   </div>
                   <div>
                     <h3 className="font-bold text-sm mb-2 text-muted uppercase tracking-wider">Payment</h3>
-                    <p className="font-semibold capitalize flex items-center gap-2"><CreditCard className="w-4 h-4" /> {form.payment_method.replace('_', ' ')}</p>
+                    <p className="font-semibold capitalize flex items-center gap-2">
+                      {form.payment_method === 'cod' ? <Truck className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />}
+                      {form.payment_method === 'cod' ? 'Cash on Delivery' : form.payment_method.replace('_', ' ')}
+                    </p>
                     <button onClick={() => setStep(2)} className="text-primary text-sm font-semibold mt-2 hover:underline">Edit</button>
                   </div>
                 </div>
 
                 <div className="flex gap-4 mt-8">
                   <button onClick={() => setStep(2)} className="px-6 py-4 bg-surface border border-border font-bold rounded-xl hover:bg-surface-hover transition-colors">Back</button>
-                  <button onClick={handleSubmitOrder} disabled={loading} className="flex-1 py-4 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-all btn-press shadow-lg shadow-primary/25 disabled:opacity-50">
+                  <button
+                    onClick={handleSubmitOrder}
+                    disabled={loading || (form.payment_method === 'credit_card' && !paymentIntentId)}
+                    className="flex-1 py-4 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-all btn-press shadow-lg shadow-primary/25 disabled:opacity-50"
+                  >
                     {loading ? 'Processing...' : 'Place Order'}
                   </button>
                 </div>

@@ -141,6 +141,38 @@ class DatabaseSeeder extends Seeder
             // Automotive
             ['category' => 7, 'name' => 'Dash Camera 4K', 'price' => 129.99, 'compare_price' => 159.99, 'brand' => 'Vantrue', 'stock' => 70, 'featured' => true, 'desc' => '4K front and rear dash camera with night vision and parking mode.', 'image' => 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600'],
             ['category' => 7, 'name' => 'Car Cleaning Kit', 'price' => 59.99, 'compare_price' => null, 'brand' => 'Chemical Guys', 'stock' => 90, 'featured' => false, 'desc' => 'Professional car detailing kit with wash, wax, and interior cleaning products.', 'image' => 'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?w=600'],
+
+            // Electronics (more)
+            ['category' => 0, 'name' => 'Google Pixel 9 Pro', 'price' => 999.99, 'compare_price' => 1099.99, 'brand' => 'Google', 'stock' => 40, 'featured' => true, 'desc' => 'Flagship Android phone with advanced AI camera tools and bright OLED display.', 'image' => 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600'],
+            ['category' => 0, 'name' => 'Nintendo Switch OLED', 'price' => 349.99, 'compare_price' => null, 'brand' => 'Nintendo', 'stock' => 65, 'featured' => false, 'desc' => 'Portable gaming console with vivid OLED screen and versatile play modes.', 'image' => 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=600'],
+
+            // Fashion (more)
+            ['category' => 1, 'name' => 'Slim Fit Denim Jeans', 'price' => 79.99, 'compare_price' => 99.99, 'brand' => 'Levi\'s', 'stock' => 110, 'featured' => false, 'desc' => 'Stretch slim-fit jeans designed for comfort, durability, and daily wear.', 'image' => 'https://images.unsplash.com/photo-1542272454315-4c01d7abdf4b?w=600'],
+            ['category' => 1, 'name' => 'Minimalist Everyday Backpack', 'price' => 89.99, 'compare_price' => null, 'brand' => 'Herschel', 'stock' => 85, 'featured' => true, 'desc' => 'Lightweight backpack with padded laptop compartment and water-resistant shell.', 'image' => 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600'],
+
+            // Home & Garden (more)
+            ['category' => 2, 'name' => 'Air Purifier HEPA 13', 'price' => 199.99, 'compare_price' => 239.99, 'brand' => 'Levoit', 'stock' => 58, 'featured' => true, 'desc' => 'Smart air purifier with HEPA 13 filtration for dust, smoke, and allergens.', 'image' => 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=600'],
+            ['category' => 2, 'name' => 'Bamboo Bath Towel Set', 'price' => 54.99, 'compare_price' => null, 'brand' => 'Brooklinen', 'stock' => 130, 'featured' => false, 'desc' => 'Ultra-soft bamboo cotton towels with high absorbency and quick drying.', 'image' => 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=600'],
+
+            // Sports (more)
+            ['category' => 3, 'name' => 'Resistance Bands Kit', 'price' => 34.99, 'compare_price' => 44.99, 'brand' => 'Fit Simplify', 'stock' => 150, 'featured' => false, 'desc' => '5-level resistance bands with handles and anchors for full-body workouts.', 'image' => 'https://images.unsplash.com/photo-1599058917765-a780eda07a3e?w=600'],
+            ['category' => 3, 'name' => 'Smart Fitness Watch', 'price' => 229.99, 'compare_price' => 269.99, 'brand' => 'Garmin', 'stock' => 48, 'featured' => true, 'desc' => 'Tracks heart rate, sleep, recovery, and workouts with multi-day battery life.', 'image' => 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=600'],
+
+            // Books (more)
+            ['category' => 4, 'name' => 'Modern Web Development', 'price' => 39.99, 'compare_price' => 49.99, 'brand' => 'O\'Reilly', 'stock' => 95, 'featured' => true, 'desc' => 'Practical guide to building scalable modern web apps from backend to frontend.', 'image' => 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=600'],
+            ['category' => 4, 'name' => 'Financial Freedom Handbook', 'price' => 27.99, 'compare_price' => null, 'brand' => 'Simon & Schuster', 'stock' => 115, 'featured' => false, 'desc' => 'Step-by-step strategies to budget, invest, and build long-term wealth.', 'image' => 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=600'],
+
+            // Health & Beauty (more)
+            ['category' => 5, 'name' => 'Hair Dryer Ionic Pro', 'price' => 119.99, 'compare_price' => 149.99, 'brand' => 'Dyson', 'stock' => 36, 'featured' => true, 'desc' => 'Ionic hair dryer with heat control for fast drying and reduced frizz.', 'image' => 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600'],
+            ['category' => 5, 'name' => 'Vitamin C Serum Duo', 'price' => 45.99, 'compare_price' => 59.99, 'brand' => 'The Ordinary', 'stock' => 140, 'featured' => false, 'desc' => 'Brightening and antioxidant-rich serum duo for daily skincare routines.', 'image' => 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=600'],
+
+            // Toys & Games (more)
+            ['category' => 6, 'name' => 'STEM Robotics Kit', 'price' => 89.99, 'compare_price' => 109.99, 'brand' => 'Makeblock', 'stock' => 50, 'featured' => true, 'desc' => 'Build and program beginner-friendly robots with interactive lessons.', 'image' => 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=600'],
+            ['category' => 6, 'name' => 'Family Puzzle 2000 Pieces', 'price' => 24.99, 'compare_price' => null, 'brand' => 'Ravensburger', 'stock' => 180, 'featured' => false, 'desc' => 'Premium quality 2000-piece puzzle for long, relaxing family game nights.', 'image' => 'https://images.unsplash.com/photo-1563089145-599997674d42?w=600'],
+
+            // Automotive (more)
+            ['category' => 7, 'name' => 'Portable Tire Inflator', 'price' => 49.99, 'compare_price' => 64.99, 'brand' => 'Xiaomi', 'stock' => 95, 'featured' => false, 'desc' => 'Compact electric inflator with digital pressure gauge and auto-stop.', 'image' => 'https://images.unsplash.com/photo-1486006920555-c77dcf18193c?w=600'],
+            ['category' => 7, 'name' => 'Wireless Car Charger Mount', 'price' => 39.99, 'compare_price' => null, 'brand' => 'Belkin', 'stock' => 120, 'featured' => true, 'desc' => 'Fast wireless charging mount with secure grip for dashboard or vent.', 'image' => 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600'],
         ];
 
         foreach ($productData as $i => $data) {

@@ -22,6 +22,14 @@ class DashboardController extends Controller
         // Wishlist count
         $wishlistCount = $user->wishlists()->withCount('items')->get()->sum('items_count');
 
+        // Wishlist items preview
+        $wishlistItems = $user->wishlists()
+            ->with(['items.product.primaryImage'])
+            ->get()
+            ->flatMap(fn ($wishlist) => $wishlist->items)
+            ->take(6)
+            ->values();
+
         // Recommended products (featured products not yet ordered)
         $orderedProductIds = $user->orders()
             ->with('items')
@@ -36,6 +44,15 @@ class DashboardController extends Controller
             ->limit(8)
             ->get();
 
+        // Active promotions (products currently on sale)
+        $activePromotions = Product::with('primaryImage')
+            ->where('is_active', true)
+            ->whereNotNull('compare_price')
+            ->whereColumn('compare_price', '>', 'price')
+            ->orderByDesc('created_at')
+            ->limit(6)
+            ->get();
+
         // Stats
         $totalOrders = $user->orders()->count();
         $totalSpent = $user->orders()->where('payment_status', 'paid')->sum('total');
@@ -45,6 +62,8 @@ class DashboardController extends Controller
         return response()->json([
             'recent_orders' => $recentOrders,
             'recommended' => $recommended,
+            'active_promotions' => $activePromotions,
+            'wishlist_items' => $wishlistItems,
             'wishlist_count' => $wishlistCount,
             'stats' => [
                 'total_orders' => $totalOrders,

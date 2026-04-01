@@ -5,6 +5,11 @@ export interface User {
   role: 'customer' | 'admin' | 'support';
   phone?: string;
   avatar?: string;
+  profile_completed?: boolean;
+  payment_preferences?: {
+    default_method: 'card' | 'paypal' | 'bank_transfer' | 'cod';
+    [key: string]: unknown;
+  };
   created_at: string;
   addresses?: Address[];
   orders_count?: number;
@@ -188,6 +193,8 @@ export interface TicketMessage {
 export interface DashboardData {
   recent_orders: Order[];
   recommended: Product[];
+  active_promotions: Product[];
+  wishlist_items: WishlistItem[];
   wishlist_count: number;
   stats: {
     total_orders: number;
@@ -195,6 +202,13 @@ export interface DashboardData {
     pending_orders: number;
     open_tickets: number;
   };
+}
+
+export interface PaymentIntentResponse {
+  payment_intent_id: string;
+  client_secret: string;
+  amount: number;
+  currency: string;
 }
 
 export interface AdminOverview {

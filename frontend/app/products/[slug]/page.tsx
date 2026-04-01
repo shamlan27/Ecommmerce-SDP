@@ -8,7 +8,19 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Product, Review } from '@/lib/types';
 import { formatCurrency, getImageUrl } from '@/lib/utils';
-import { ShoppingCart, Heart, Share2, Star, CheckCircle, ChevronRight, ShieldCheck, Truck, ArrowLeft } from 'lucide-react';
+import { ShoppingCart, Heart, Star, CheckCircle, ChevronRight, ShieldCheck, Truck } from 'lucide-react';
+
+interface ProductDetailResponse {
+  product: Product;
+}
+
+interface PaginatedReviewsResponse {
+  data: Review[];
+}
+
+interface WishlistSummary {
+  id: number;
+}
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -23,23 +35,84 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const [inWishlist, setInWishlist] = useState(false);
+  const [canReview, setCanReview] = useState(false);
+  const [canReviewMessage, setCanReviewMessage] = useState('');
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewTitle, setReviewTitle] = useState('');
+  const [reviewBody, setReviewBody] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState('');
 
   useEffect(() => {
     if (slug) {
-      api.get<any>(`/products/${slug}`)
-        .then(response => {
-          const productData = response.product || response;
+      setReviewError('');
+      setCanReview(false);
+      setCanReviewMessage('');
+
+      api.get<Product | ProductDetailResponse>(`/products/${slug}`)
+        .then(async (response) => {
+          const productData = 'product' in response ? response.product : response;
           setProduct(productData);
           setActiveImage(productData.primary_image?.image_path || productData.images?.[0]?.image_path || '');
-          
-          api.get<any>(`/products/${productData.id}/reviews`)
-            .then(res => setReviews(res.data || []))
-            .catch(() => setReviews([]));
+
+          try {
+            const reviewRes = await api.get<PaginatedReviewsResponse>(`/products/${productData.id}/reviews`);
+            setReviews(reviewRes.data || []);
+          } catch {
+            setReviews([]);
+          }
+
+          if (!user) {
+            setCanReview(false);
+            setCanReviewMessage('Sign in and purchase this product to leave a review after delivery.');
+            return;
+          }
+
+          try {
+            const eligibility = await api.get<{ can_review: boolean; message: string }>(`/products/${productData.id}/can-review`);
+            setCanReview(eligibility.can_review);
+            setCanReviewMessage(eligibility.message);
+          } catch {
+            setCanReview(false);
+            setCanReviewMessage('You can review this product after your order is delivered.');
+          }
         })
         .catch(() => setProduct(null))
         .finally(() => setLoading(false));
     }
-  }, [slug]);
+  }, [slug, user]);
+
+  const submitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!product || !user || !canReview) return;
+
+    setReviewSubmitting(true);
+    setReviewError('');
+
+    try {
+      const createdReview = await api.post<Review>(`/products/${product.id}/reviews`, {
+        rating: reviewRating,
+        title: reviewTitle,
+        body: reviewBody,
+      });
+
+      setReviews((prev) => [createdReview, ...prev]);
+      setCanReview(false);
+      setCanReviewMessage('Review submitted successfully.');
+      setReviewTitle('');
+      setReviewBody('');
+      setReviewRating(5);
+    } catch (err: unknown) {
+      if (typeof err === 'object' && err !== null && 'data' in err) {
+        const data = (err as { data?: { message?: string } }).data;
+        setReviewError(data?.message || 'Failed to submit review.');
+      } else {
+        setReviewError('Failed to submit review.');
+      }
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -55,10 +128,10 @@ export default function ProductDetailPage() {
         // Find wishlist id logic would go here, mock for now
         setInWishlist(false);
       } else {
-        const wishlists = await api.get<any[]>('/wishlists');
+        const wishlists = await api.get<WishlistSummary[]>('/wishlists');
         let wid = wishlists[0]?.id;
         if (!wid) {
-          const newW = await api.post<any>('/wishlists', { name: 'My Wishlist' });
+          const newW = await api.post<WishlistSummary>('/wishlists', { name: 'My Wishlist' });
           wid = newW.id;
         }
         await api.post(`/wishlists/${wid}/items`, { product_id: product.id });
@@ -212,6 +285,59 @@ export default function ProductDetailPage() {
             Reviews
             <span className="text-sm font-medium px-3 py-1 bg-surface border border-border rounded-full">{reviews.length}</span>
           </h2>
+
+          <div className="mb-6 p-4 bg-surface border border-border rounded-2xl">
+            {!user ? (
+              <p className="text-sm text-muted">
+                Please <Link href="/login" className="text-primary font-semibold hover:underline">sign in</Link> to review after your order is delivered.
+              </p>
+            ) : canReview ? (
+              <form onSubmit={submitReview} className="space-y-3">
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Rating</label>
+                  <select
+                    value={reviewRating}
+                    onChange={(e) => setReviewRating(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                  >
+                    {[5, 4, 3, 2, 1].map((r) => (
+                      <option key={r} value={r}>{r} Star{r > 1 ? 's' : ''}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Title</label>
+                  <input
+                    value={reviewTitle}
+                    onChange={(e) => setReviewTitle(e.target.value)}
+                    maxLength={255}
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                    placeholder="Review title"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Comment</label>
+                  <textarea
+                    value={reviewBody}
+                    onChange={(e) => setReviewBody(e.target.value)}
+                    maxLength={2000}
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-background h-24"
+                    placeholder="Share your experience"
+                  />
+                </div>
+                {reviewError && <p className="text-sm text-danger">{reviewError}</p>}
+                <button
+                  type="submit"
+                  disabled={reviewSubmitting}
+                  className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark disabled:opacity-50"
+                >
+                  {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
+                </button>
+              </form>
+            ) : (
+              <p className="text-sm text-muted">{canReviewMessage || 'You can review this product after your order is delivered.'}</p>
+            )}
+          </div>
           
           {reviews.length === 0 ? (
             <div className="text-center p-8 bg-surface rounded-2xl border border-border border-dashed">

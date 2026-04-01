@@ -3,14 +3,26 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Events\OrderTrackingUpdated;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderTracking;
+use App\Services\LogisticsIntegrationService;
+use App\Services\MarketingWebhookService;
+use App\Services\StripePaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
+    public function __construct(
+        private readonly StripePaymentService $stripe,
+        private readonly LogisticsIntegrationService $logistics,
+        private readonly MarketingWebhookService $marketing
+    )
+    {
+    }
+
     public function index(Request $request)
     {
         $orders = $request->user()->orders()
@@ -43,8 +55,25 @@ class OrderController extends Controller
             'shipping_country' => 'sometimes|string|max:2',
             'shipping_phone' => 'nullable|string|max:20',
             'payment_method' => 'sometimes|string',
+            'payment_intent_id' => 'nullable|string',
             'notes' => 'nullable|string',
         ]);
+
+        $paymentMethod = $request->input('payment_method', 'card');
+
+        if ($paymentMethod === 'card') {
+            $request->validate([
+                'payment_intent_id' => 'required|string',
+            ]);
+
+            if (!$this->stripe->isConfigured()) {
+                return response()->json(['message' => 'Payment gateway is not configured.'], 422);
+            }
+
+            if (!$this->stripe->verifySucceeded($request->payment_intent_id)) {
+                return response()->json(['message' => 'Payment verification failed. Please retry payment.'], 422);
+            }
+        }
 
         $cartItems = $request->user()->cartItems()->with('product')->get();
 
@@ -61,7 +90,9 @@ class OrderController extends Controller
             }
         }
 
-        $order = DB::transaction(function () use ($request, $cartItems) {
+        $trackingEntry = null;
+
+        $order = DB::transaction(function () use ($request, $cartItems, $paymentMethod, &$trackingEntry) {
             $subtotal = $cartItems->sum(fn($item) => $item->product->price * $item->quantity);
             $tax = round($subtotal * 0.08, 2); // 8% tax
             $shippingCost = $subtotal >= 100 ? 0 : 9.99;
@@ -82,8 +113,8 @@ class OrderController extends Controller
                 'tax' => $tax,
                 'shipping_cost' => $shippingCost,
                 'total' => $total,
-                'payment_method' => $request->input('payment_method', 'card'),
-                'payment_status' => 'paid', // Mock payment
+                'payment_method' => $paymentMethod,
+                'payment_status' => $paymentMethod === 'card' ? 'paid' : 'pending',
                 'notes' => $request->notes,
             ]);
 
@@ -102,7 +133,7 @@ class OrderController extends Controller
             }
 
             // Create initial tracking
-            OrderTracking::create([
+            $trackingEntry = OrderTracking::create([
                 'order_id' => $order->id,
                 'status' => 'pending',
                 'description' => 'Order placed successfully.',
@@ -114,6 +145,14 @@ class OrderController extends Controller
 
             return $order;
         });
+
+        if ($trackingEntry) {
+            broadcast(new OrderTrackingUpdated($order->fresh(), $trackingEntry));
+        }
+
+        // Outbound integration hooks are best-effort and must not break checkout.
+        $this->marketing->syncOrderCreated($order->fresh('items'));
+        $this->logistics->createShipment($order->fresh());
 
         return response()->json($order->load('items'), 201);
     }
