@@ -23,7 +23,8 @@ RUN apk add --no-cache \
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Copy dependency manifests first for better Docker layer caching.
-COPY composer.json composer.lock ./
+COPY composer.json ./
+COPY composer.lock* ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
 # Copy application code.
