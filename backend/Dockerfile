@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     git \
     libicu-dev \
+    libonig-dev \
+    libpq-dev \
     libzip-dev \
     unzip \
     && rm -rf /var/lib/apt/lists/*
@@ -17,7 +19,7 @@ RUN docker-php-ext-install \
     bcmath \
     intl \
     mbstring \
-    pdo_mysql \
+    pdo_pgsql \
     zip
 
 # Install Composer.
