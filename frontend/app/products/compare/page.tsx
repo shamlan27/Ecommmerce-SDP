@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Product } from '@/lib/types';
 import { formatCurrency, getImageUrl } from '@/lib/utils';
+import api from '@/lib/api';
 
 interface CompareResponse {
   products: Product[];
@@ -11,16 +12,13 @@ async function fetchCompareProducts(ids: number[]): Promise<CompareResponse | nu
     return null;
   }
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-  const response = await fetch(`${apiUrl}/products/compare?ids=${ids.join(',')}`, {
-    cache: 'no-store',
-  });
-
-  if (!response.ok) {
+  try {
+    return await api.get<CompareResponse>(`/products/compare?ids=${ids.join(',')}`, {
+      cache: 'no-store',
+    });
+  } catch {
     return null;
   }
-
-  return response.json();
 }
 
 export default async function CompareProductsPage({
