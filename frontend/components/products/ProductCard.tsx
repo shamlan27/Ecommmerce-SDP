@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { formatCurrency, getImageUrl } from '@/lib/utils';
+import { formatCurrency, getImageUrl, handleImageError } from '@/lib/utils';
 import type { Product } from '@/lib/types';
 import { ShoppingCart, Star, Scale } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
@@ -58,6 +58,7 @@ export default function ProductCard({ product }: Props) {
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           loading="lazy"
+          onError={handleImageError}
         />
         {/* Quick Add overlay */}
         <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 transform translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">

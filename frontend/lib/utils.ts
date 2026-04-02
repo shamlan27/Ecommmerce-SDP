@@ -58,6 +58,15 @@ export function truncate(str: string, length: number): string {
   return str.slice(0, length) + '...';
 }
 
+export const IMAGE_FALLBACK_URL = 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400';
+
+export function handleImageError(event: React.SyntheticEvent<HTMLImageElement, Event>): void {
+  const img = event.currentTarget;
+  if (img.src !== IMAGE_FALLBACK_URL) {
+    img.src = IMAGE_FALLBACK_URL;
+  }
+}
+
 function getStorageBaseUrl(): string {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
   const trimmed = apiUrl.trim().replace(/\/+$/, '');
@@ -66,7 +75,7 @@ function getStorageBaseUrl(): string {
 }
 
 export function getImageUrl(path: string | undefined): string {
-  if (!path) return 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400';
+  if (!path) return IMAGE_FALLBACK_URL;
 
   const storageBase = getStorageBaseUrl();
 

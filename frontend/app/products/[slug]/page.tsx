@@ -7,7 +7,7 @@ import api from '@/lib/api';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Product, Review } from '@/lib/types';
-import { formatCurrency, getImageUrl } from '@/lib/utils';
+import { formatCurrency, getImageUrl, handleImageError } from '@/lib/utils';
 import { ShoppingCart, Heart, Star, CheckCircle, ChevronRight, ShieldCheck, Truck } from 'lucide-react';
 
 interface ProductDetailResponse {
@@ -176,7 +176,7 @@ export default function ProductDetailPage() {
         {/* Gallery */}
         <div className="space-y-4">
           <div className="aspect-square bg-surface border border-border rounded-3xl overflow-hidden relative">
-            <img src={getImageUrl(activeImage)} alt={product.name} className="w-full h-full object-cover" />
+            <img src={getImageUrl(activeImage)} alt={product.name} className="w-full h-full object-cover" onError={handleImageError} />
             {product.compare_price && product.compare_price > product.price && (
               <span className="absolute top-4 left-4 px-3 py-1.5 bg-danger text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-lg">Sale</span>
             )}
@@ -189,7 +189,7 @@ export default function ProductDetailPage() {
                   onClick={() => setActiveImage(img.image_path)}
                   className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${activeImage === img.image_path ? 'border-primary' : 'border-transparent hover:border-primary/50'}`}
                 >
-                  <img src={getImageUrl(img.image_path)} alt="" className="w-full h-full object-cover" />
+                  <img src={getImageUrl(img.image_path)} alt="" className="w-full h-full object-cover" onError={handleImageError} />
                 </button>
               ))}
             </div>
