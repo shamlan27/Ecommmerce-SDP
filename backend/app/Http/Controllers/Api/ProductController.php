@@ -123,8 +123,8 @@ class ProductController extends Controller
             ->take(4)
             ->values();
 
-        if ($ids->count() < 2) {
-            return response()->json(['message' => 'Select at least two products to compare.'], 422);
+        if ($ids->isEmpty()) {
+            return response()->json(['message' => 'Select at least one product to compare.'], 422);
         }
 
         $products = Product::with(['category', 'primaryImage'])

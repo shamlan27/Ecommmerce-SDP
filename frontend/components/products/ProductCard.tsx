@@ -48,10 +48,7 @@ export default function ProductCard({ product }: Props) {
 
     const merged = Array.from(new Set([...current, product.id])).slice(-4);
     localStorage.setItem(key, JSON.stringify(merged));
-
-    if (merged.length >= 2) {
-      router.push(`/products/compare?ids=${merged.join(',')}`);
-    }
+    router.push(`/products/compare?ids=${merged.join(',')}`);
   };
 
   return (
