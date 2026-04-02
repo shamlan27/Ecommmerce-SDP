@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductImage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 class ProductController extends Controller
@@ -15,6 +16,34 @@ class ProductController extends Controller
         $request->validate([
             'image' => 'required|image|mimes:jpg,jpeg,png,webp,gif|max:5120',
         ]);
+
+        $cloudName = env('CLOUDINARY_CLOUD_NAME');
+        $apiKey = env('CLOUDINARY_API_KEY');
+        $apiSecret = env('CLOUDINARY_API_SECRET');
+
+        if ($cloudName && $apiKey && $apiSecret) {
+            $timestamp = time();
+            $folder = 'products';
+            $signature = sha1("folder={$folder}&timestamp={$timestamp}{$apiSecret}");
+
+            $response = Http::asMultipart()
+                ->attach('file', fopen($request->file('image')->getRealPath(), 'r'), $request->file('image')->getClientOriginalName())
+                ->post("https://api.cloudinary.com/v1_1/{$cloudName}/image/upload", [
+                    'api_key' => $apiKey,
+                    'timestamp' => $timestamp,
+                    'folder' => $folder,
+                    'signature' => $signature,
+                ]);
+
+            if ($response->successful() && $response->json('secure_url')) {
+                $secureUrl = $response->json('secure_url');
+
+                return response()->json([
+                    'path' => $secureUrl,
+                    'url' => $secureUrl,
+                ], 201);
+            }
+        }
 
         $path = $request->file('image')->store('products', 'public');
 
