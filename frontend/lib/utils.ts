@@ -58,10 +58,33 @@ export function truncate(str: string, length: number): string {
   return str.slice(0, length) + '...';
 }
 
+function getStorageBaseUrl(): string {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+  const trimmed = apiUrl.trim().replace(/\/+$/, '');
+  const origin = trimmed.endsWith('/api') ? trimmed.slice(0, -4) : trimmed;
+  return `${origin}/storage`;
+}
+
 export function getImageUrl(path: string | undefined): string {
   if (!path) return 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400';
-  if (path.startsWith('http')) return path;
-  return `http://localhost:8000/storage/${path}`;
+
+  const storageBase = getStorageBaseUrl();
+
+  if (/^https?:\/\/localhost:8000\//i.test(path)) {
+    return path.replace(/^https?:\/\/localhost:8000\//i, `${storageBase.replace(/\/storage$/, '')}/`);
+  }
+
+  if (/^https?:\/\//i.test(path)) return path;
+
+  if (path.startsWith('/storage/')) {
+    return `${storageBase}/${path.replace(/^\/storage\//, '')}`;
+  }
+
+  if (path.startsWith('storage/')) {
+    return `${storageBase}/${path.replace(/^storage\//, '')}`;
+  }
+
+  return `${storageBase}/${path}`;
 }
 
 export function classNames(...classes: (string | boolean | undefined)[]): string {
