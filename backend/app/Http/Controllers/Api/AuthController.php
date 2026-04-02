@@ -10,6 +10,7 @@ use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
@@ -94,6 +95,7 @@ class AuthController extends Controller
         ]);
 
         $user = User::where('email', $request->email)->first();
+        $emailHash = sha1($request->email);
 
         if ($user) {
             $token = Password::createToken($user);
@@ -101,7 +103,18 @@ class AuthController extends Controller
             $email = urlencode($user->getEmailForPasswordReset());
             $resetUrl = "{$frontendUrl}/reset-password?token={$token}&email={$email}";
 
-            $this->brevoEmail->sendPasswordReset($user, $resetUrl);
+            $accepted = $this->brevoEmail->sendPasswordReset($user, $resetUrl);
+
+            Log::info('Forgot password processed', [
+                'email_hash' => $emailHash,
+                'user_found' => true,
+                'brevo_accepted' => $accepted,
+            ]);
+        } else {
+            Log::info('Forgot password processed', [
+                'email_hash' => $emailHash,
+                'user_found' => false,
+            ]);
         }
 
         return response()->json([
