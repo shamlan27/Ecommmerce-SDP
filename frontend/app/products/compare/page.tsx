@@ -1,7 +1,7 @@
 "use client";
 
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { PaginatedResponse, Product } from '@/lib/types';
 import { formatCurrency, getImageUrl } from '@/lib/utils';
@@ -119,6 +119,14 @@ function CompareProductPicker({
 }
 
 export default function CompareProductsPage() {
+  return (
+    <Suspense fallback={<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"><div className="h-12 w-72 skeleton rounded-xl mb-6" /><div className="grid gap-6 lg:grid-cols-2"><div className="h-[520px] skeleton rounded-3xl" /><div className="h-[520px] skeleton rounded-3xl" /></div></div>}>
+      <CompareProductsContent />
+    </Suspense>
+  );
+}
+
+function CompareProductsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const ids = parseIds(searchParams.get('ids'));
