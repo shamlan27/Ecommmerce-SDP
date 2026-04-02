@@ -7,6 +7,8 @@ import api from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
+const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
 function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -22,6 +24,14 @@ function ResetPasswordContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!strongPasswordRegex.test(password)) {
+      setError('Password must include uppercase, lowercase, and at least one number.');
+      return;
+    }
+    if (password !== passwordConfirmation) {
+      setError('Passwords do not match.');
+      return;
+    }
     setLoading(true);
     setError('');
     setMessage('');
@@ -91,9 +101,12 @@ function ResetPasswordContent() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
+              pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$"
+              title="Include uppercase, lowercase, and at least one number"
               className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
               placeholder="Minimum 8 characters"
             />
+            <p className="mt-1 text-xs text-muted">Use at least 8 characters with uppercase, lowercase, and a number.</p>
           </div>
 
           <div>

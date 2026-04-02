@@ -33,10 +33,25 @@ export default function ProductCard({ product }: Props) {
   const addToCompare = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     const key = 'compare_product_ids';
-    const current = JSON.parse(localStorage.getItem(key) || '[]') as number[];
+    let current: number[] = [];
+
+    try {
+      const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+      if (Array.isArray(parsed)) {
+        current = parsed
+          .map((id) => Number(id))
+          .filter((id) => Number.isFinite(id) && id > 0);
+      }
+    } catch {
+      current = [];
+    }
+
     const merged = Array.from(new Set([...current, product.id])).slice(-4);
     localStorage.setItem(key, JSON.stringify(merged));
-    router.push(`/products/compare?ids=${merged.join(',')}`);
+
+    if (merged.length >= 2) {
+      router.push(`/products/compare?ids=${merged.join(',')}`);
+    }
   };
 
   return (

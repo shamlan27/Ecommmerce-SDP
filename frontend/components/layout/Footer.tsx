@@ -21,8 +21,8 @@ export default function Footer() {
             </p>
             <div className="flex flex-col gap-2 text-sm text-muted">
               <div className="flex items-center gap-2"><Mail className="w-4 h-4" /> support@shopnest.com</div>
-              <div className="flex items-center gap-2"><Phone className="w-4 h-4" /> +1 (555) 123-4567</div>
-              <div className="flex items-center gap-2"><MapPin className="w-4 h-4" /> New York, NY 10001</div>
+              <div className="flex items-center gap-2"><Phone className="w-4 h-4" /> +94 77 123 4567</div>
+              <div className="flex items-center gap-2"><MapPin className="w-4 h-4" /> Colombo 03, Sri Lanka</div>
             </div>
           </div>
 

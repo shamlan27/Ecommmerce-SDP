@@ -10,6 +10,8 @@ import type { PaymentIntentResponse } from '@/lib/types';
 import { formatCurrency, getImageUrl } from '@/lib/utils';
 import { CheckCircle, CreditCard, MapPin, Truck } from 'lucide-react';
 
+const sriLankaPhoneRegex = /^(?:\+94|0)\d{9}$/;
+
 interface CreatedOrder {
   id: number;
 }
@@ -36,7 +38,7 @@ export default function CheckoutPage() {
   const [form, setForm] = useState({
     shipping_name: user?.name || '',
     shipping_phone: user?.phone || '',
-    shipping_country: 'US',
+    shipping_country: 'LK',
     shipping_address: '',
     shipping_city: '',
     shipping_state: '',
@@ -65,6 +67,11 @@ export default function CheckoutPage() {
   };
 
   const handleSubmitOrder = async () => {
+    if (!sriLankaPhoneRegex.test(form.shipping_phone.trim())) {
+      setError('Use a valid Sri Lankan phone number (e.g. 0771234567 or +94771234567).');
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
@@ -145,23 +152,27 @@ export default function CheckoutPage() {
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-semibold mb-1.5 ml-1">Phone Number</label>
-                    <input value={form.shipping_phone} onChange={e => setForm({...form, shipping_phone: e.target.value})} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/50 text-sm" placeholder="+1 (555) 000-0000" />
+                    <input value={form.shipping_phone} onChange={e => setForm({...form, shipping_phone: e.target.value})} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/50 text-sm" placeholder="0771234567" pattern="^(?:\\+94|0)\\d{9}$" title="Use 0771234567 or +94771234567" />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-semibold mb-1.5 ml-1">Address</label>
-                    <input value={form.shipping_address} onChange={e => setForm({...form, shipping_address: e.target.value})} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/50 text-sm" placeholder="123 Main St" />
+                    <input value={form.shipping_address} onChange={e => setForm({...form, shipping_address: e.target.value})} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/50 text-sm" placeholder="No. 25, Galle Road" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold mb-1.5 ml-1">City</label>
-                    <input value={form.shipping_city} onChange={e => setForm({...form, shipping_city: e.target.value})} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/50 text-sm" placeholder="New York" />
+                    <input value={form.shipping_city} onChange={e => setForm({...form, shipping_city: e.target.value})} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/50 text-sm" placeholder="Colombo" />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold mb-1.5 ml-1">State</label>
-                    <input value={form.shipping_state} onChange={e => setForm({...form, shipping_state: e.target.value})} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/50 text-sm" placeholder="NY" />
+                    <label className="block text-sm font-semibold mb-1.5 ml-1">Province</label>
+                    <input value={form.shipping_state} onChange={e => setForm({...form, shipping_state: e.target.value})} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/50 text-sm" placeholder="Western" />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold mb-1.5 ml-1">ZIP Code</label>
-                    <input value={form.shipping_zip} onChange={e => setForm({...form, shipping_zip: e.target.value})} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/50 text-sm" placeholder="10001" />
+                    <label className="block text-sm font-semibold mb-1.5 ml-1">Postal Code (Optional)</label>
+                    <input value={form.shipping_zip} onChange={e => setForm({...form, shipping_zip: e.target.value})} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/50 text-sm" placeholder="10100" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-1.5 ml-1">Country</label>
+                    <input value={form.shipping_country} onChange={e => setForm({...form, shipping_country: e.target.value.toUpperCase()})} maxLength={2} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/50 text-sm" placeholder="LK" />
                   </div>
                 </div>
                 <button onClick={() => setStep(2)} className="w-full mt-6 py-4 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-all btn-press shadow-lg shadow-primary/25">Continue to Payment</button>

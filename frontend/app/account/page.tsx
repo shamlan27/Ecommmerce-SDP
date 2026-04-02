@@ -20,7 +20,7 @@ export default function AccountPage() {
     shipping_city: '',
     shipping_state: '',
     shipping_zip: '',
-    shipping_country: 'US',
+    shipping_country: 'LK',
     payment_default_method: 'card',
   });
 
@@ -108,7 +108,7 @@ export default function AccountPage() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1.5 flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> Phone Number</label>
-            <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} required className="w-full px-4 py-3 border border-border rounded-xl text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" placeholder="+1 (555) 000-0000" />
+            <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} required className="w-full px-4 py-3 border border-border rounded-xl text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" placeholder="0771234567" pattern="^(?:\\+94|0)\\d{9}$" title="Use 0771234567 or +94771234567" />
           </div>
           <button type="submit" disabled={saving} className="flex items-center gap-2 px-6 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors btn-press disabled:opacity-50">
             <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save Changes'}
@@ -143,13 +143,13 @@ export default function AccountPage() {
                 <option value="cod">Cash on Delivery</option>
               </select>
             </div>
-            <input value={profileForm.shipping_line1} onChange={e => setProfileForm({ ...profileForm, shipping_line1: e.target.value })} required className="w-full px-4 py-3 border border-border rounded-xl text-sm bg-background" placeholder="Address line 1" />
+            <input value={profileForm.shipping_line1} onChange={e => setProfileForm({ ...profileForm, shipping_line1: e.target.value })} required className="w-full px-4 py-3 border border-border rounded-xl text-sm bg-background" placeholder="No. 25, Galle Road" />
             <input value={profileForm.shipping_line2} onChange={e => setProfileForm({ ...profileForm, shipping_line2: e.target.value })} className="w-full px-4 py-3 border border-border rounded-xl text-sm bg-background" placeholder="Address line 2 (optional)" />
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <input value={profileForm.shipping_city} onChange={e => setProfileForm({ ...profileForm, shipping_city: e.target.value })} required className="w-full px-4 py-3 border border-border rounded-xl text-sm bg-background" placeholder="City" />
-              <input value={profileForm.shipping_state} onChange={e => setProfileForm({ ...profileForm, shipping_state: e.target.value })} required className="w-full px-4 py-3 border border-border rounded-xl text-sm bg-background" placeholder="State" />
-              <input value={profileForm.shipping_zip} onChange={e => setProfileForm({ ...profileForm, shipping_zip: e.target.value })} required className="w-full px-4 py-3 border border-border rounded-xl text-sm bg-background" placeholder="ZIP" />
-              <input value={profileForm.shipping_country} onChange={e => setProfileForm({ ...profileForm, shipping_country: e.target.value.toUpperCase() })} required className="w-full px-4 py-3 border border-border rounded-xl text-sm bg-background" placeholder="Country" maxLength={2} />
+              <input value={profileForm.shipping_city} onChange={e => setProfileForm({ ...profileForm, shipping_city: e.target.value })} required className="w-full px-4 py-3 border border-border rounded-xl text-sm bg-background" placeholder="Colombo" />
+              <input value={profileForm.shipping_state} onChange={e => setProfileForm({ ...profileForm, shipping_state: e.target.value })} required className="w-full px-4 py-3 border border-border rounded-xl text-sm bg-background" placeholder="Western" />
+              <input value={profileForm.shipping_zip} onChange={e => setProfileForm({ ...profileForm, shipping_zip: e.target.value })} className="w-full px-4 py-3 border border-border rounded-xl text-sm bg-background" placeholder="Postal (optional)" />
+              <input value={profileForm.shipping_country} onChange={e => setProfileForm({ ...profileForm, shipping_country: e.target.value.toUpperCase() })} required className="w-full px-4 py-3 border border-border rounded-xl text-sm bg-background" placeholder="LK" maxLength={2} />
             </div>
 
             <button type="submit" disabled={completing} className="px-6 py-3 bg-primary text-white rounded-xl font-semibold disabled:opacity-50">

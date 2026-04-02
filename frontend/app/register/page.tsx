@@ -8,6 +8,9 @@ import api from '@/lib/api';
 import type { User as UserType } from '@/lib/types';
 import { Mail, Lock, User, Store, Phone } from 'lucide-react';
 
+const sriLankaPhoneRegex = /^(?:\+94|0)\d{9}$/;
+const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
 export default function RegisterPage() {
   const { register } = useAuth();
   const router = useRouter();
@@ -23,7 +26,7 @@ export default function RegisterPage() {
     shipping_city: '',
     shipping_state: '',
     shipping_zip: '',
-    shipping_country: 'US',
+    shipping_country: 'LK',
     payment_default_method: 'card',
   });
   const [error, setError] = useState('');
@@ -45,6 +48,12 @@ export default function RegisterPage() {
     e.preventDefault();
     if (form.password !== form.password_confirmation) {
       return setError('Passwords do not match');
+    }
+    if (!strongPasswordRegex.test(form.password)) {
+      return setError('Password must include uppercase, lowercase, and at least one number.');
+    }
+    if (!sriLankaPhoneRegex.test(form.phone.trim())) {
+      return setError('Use a valid Sri Lankan phone number (e.g. 0771234567 or +94771234567).');
     }
     setError('');
     setLoading(true);
@@ -118,7 +127,7 @@ export default function RegisterPage() {
             <label className="block text-sm font-semibold mb-1.5 ml-1">Phone Number</label>
             <div className="relative">
               <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
-              <input id="phone" type="tel" value={form.phone} onChange={handleChange} required className="w-full pl-12 pr-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="+1 (555) 000-0000" />
+              <input id="phone" type="tel" value={form.phone} onChange={handleChange} required className="w-full pl-12 pr-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="0771234567" pattern="^(?:\\+94|0)\\d{9}$" title="Use 0771234567 or +94771234567" />
             </div>
           </div>
           <div>
@@ -127,7 +136,7 @@ export default function RegisterPage() {
           </div>
           <div>
             <label className="block text-sm font-semibold mb-1.5 ml-1">Shipping Address</label>
-            <input id="shipping_line1" type="text" value={form.shipping_line1} onChange={handleChange} required className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="123 Main St" />
+            <input id="shipping_line1" type="text" value={form.shipping_line1} onChange={handleChange} required className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="No. 25, Galle Road" />
           </div>
           <div>
             <label className="block text-sm font-semibold mb-1.5 ml-1">Address Line 2 (Optional)</label>
@@ -136,21 +145,21 @@ export default function RegisterPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-semibold mb-1.5 ml-1">City</label>
-              <input id="shipping_city" type="text" value={form.shipping_city} onChange={handleChange} required className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="City" />
+              <input id="shipping_city" type="text" value={form.shipping_city} onChange={handleChange} required className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="Colombo" />
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-1.5 ml-1">State</label>
-              <input id="shipping_state" type="text" value={form.shipping_state} onChange={handleChange} required className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="State" />
+              <label className="block text-sm font-semibold mb-1.5 ml-1">Province</label>
+              <input id="shipping_state" type="text" value={form.shipping_state} onChange={handleChange} required className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="Western" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-semibold mb-1.5 ml-1">ZIP</label>
-              <input id="shipping_zip" type="text" value={form.shipping_zip} onChange={handleChange} required className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="ZIP" />
+              <label className="block text-sm font-semibold mb-1.5 ml-1">Postal Code (Optional)</label>
+              <input id="shipping_zip" type="text" value={form.shipping_zip} onChange={handleChange} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="10100" />
             </div>
             <div>
               <label className="block text-sm font-semibold mb-1.5 ml-1">Country (2 letters)</label>
-              <input id="shipping_country" type="text" value={form.shipping_country} onChange={(e) => setForm({ ...form, shipping_country: e.target.value.toUpperCase() })} required maxLength={2} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="US" />
+              <input id="shipping_country" type="text" value={form.shipping_country} onChange={(e) => setForm({ ...form, shipping_country: e.target.value.toUpperCase() })} required maxLength={2} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="LK" />
             </div>
           </div>
           <div>
@@ -166,8 +175,9 @@ export default function RegisterPage() {
             <label className="block text-sm font-semibold mb-1.5 ml-1">Password</label>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
-              <input id="password" type="password" value={form.password} onChange={handleChange} required className="w-full pl-12 pr-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="••••••••" />
+              <input id="password" type="password" value={form.password} onChange={handleChange} required className="w-full pl-12 pr-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="Minimum 8 chars" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$" title="Include uppercase, lowercase, and at least one number" />
             </div>
+            <p className="mt-1 text-xs text-muted">Use at least 8 characters with uppercase, lowercase, and a number.</p>
           </div>
           <div>
             <label className="block text-sm font-semibold mb-1.5 ml-1">Confirm Password</label>

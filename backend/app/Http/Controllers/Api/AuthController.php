@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\BrevoTransactionalEmailService;
 use App\Services\MarketingWebhookService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
@@ -16,7 +17,10 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function __construct(private readonly MarketingWebhookService $marketing)
+    public function __construct(
+        private readonly MarketingWebhookService $marketing,
+        private readonly BrevoTransactionalEmailService $brevoEmail
+    )
     {
     }
 
@@ -29,7 +33,7 @@ class AuthController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => ['required', 'confirmed', Rules\Password::min(8)->letters()->mixedCase()->numbers()],
             'phone' => 'required|string|max:20',
         ]);
 
@@ -89,9 +93,16 @@ class AuthController extends Controller
             'email' => 'required|string|email',
         ]);
 
-        Password::sendResetLink([
-            'email' => $request->email,
-        ]);
+        $user = User::where('email', $request->email)->first();
+
+        if ($user) {
+            $token = Password::createToken($user);
+            $frontendUrl = rtrim((string) env('FRONTEND_URL', 'http://localhost:3000'), '/');
+            $email = urlencode($user->getEmailForPasswordReset());
+            $resetUrl = "{$frontendUrl}/reset-password?token={$token}&email={$email}";
+
+            $this->brevoEmail->sendPasswordReset($user, $resetUrl);
+        }
 
         return response()->json([
             'message' => 'If an account with that email exists, a password reset link has been sent.',
@@ -107,7 +118,7 @@ class AuthController extends Controller
         $request->validate([
             'token' => 'required|string',
             'email' => 'required|string|email',
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => ['required', 'confirmed', Rules\Password::min(8)->letters()->mixedCase()->numbers()],
         ]);
 
         $status = Password::reset(
@@ -172,7 +183,7 @@ class AuthController extends Controller
             'shipping.line2' => 'nullable|string|max:255',
             'shipping.city' => 'required|string|max:255',
             'shipping.state' => 'required|string|max:255',
-            'shipping.zip' => 'required|string|max:20',
+            'shipping.zip' => 'nullable|string|max:20',
             'shipping.country' => 'sometimes|string|max:2',
             'shipping.phone' => 'nullable|string|max:20',
         ]);
@@ -198,8 +209,8 @@ class AuthController extends Controller
                 'line2' => $request->input('shipping.line2'),
                 'city' => $request->input('shipping.city'),
                 'state' => $request->input('shipping.state'),
-                'zip' => $request->input('shipping.zip'),
-                'country' => strtoupper($request->input('shipping.country', 'US')),
+                'zip' => $request->filled('shipping.zip') ? $request->input('shipping.zip') : null,
+                'country' => strtoupper($request->input('shipping.country', 'LK')),
                 'phone' => $request->input('shipping.phone'),
                 'is_default' => true,
             ]);

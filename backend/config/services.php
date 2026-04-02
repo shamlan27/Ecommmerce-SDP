@@ -55,4 +55,9 @@ return [
         'url' => env('CLOUDINARY_URL'),
     ],
 
+    'brevo' => [
+        'api_key' => env('BREVO_API_KEY'),
+        'password_reset_template_id' => (int) env('BREVO_RESET_TEMPLATE_ID', 1),
+    ],
+
 ];
