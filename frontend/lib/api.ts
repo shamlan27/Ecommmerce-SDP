@@ -7,6 +7,10 @@ function normalizeApiBaseUrl(url: string): string {
 
 const API_URL = normalizeApiBaseUrl(RAW_API_URL);
 
+export function getApiBaseUrl(): string {
+  return API_URL;
+}
+
 interface FetchOptions extends RequestInit {
   token?: string;
 }

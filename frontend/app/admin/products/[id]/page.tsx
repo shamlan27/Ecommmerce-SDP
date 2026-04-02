@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import api from '@/lib/api';
+import api, { getApiBaseUrl } from '@/lib/api';
 import type { Category, Product } from '@/lib/types';
 import { getImageUrl } from '@/lib/utils';
 import { ArrowLeft, Save, UploadCloud } from 'lucide-react';
@@ -97,7 +97,7 @@ export default function EditProductAdmin() {
   };
 
   const uploadImageFile = async (file: File) => {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+    const apiBase = getApiBaseUrl();
     const token = localStorage.getItem('auth_token');
 
     if (!token) {
