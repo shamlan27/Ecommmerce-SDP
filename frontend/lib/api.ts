@@ -1,4 +1,11 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+function normalizeApiBaseUrl(url: string): string {
+  const trimmed = url.trim().replace(/\/+$/, '');
+  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+}
+
+const API_URL = normalizeApiBaseUrl(RAW_API_URL);
 
 interface FetchOptions extends RequestInit {
   token?: string;
@@ -19,6 +26,7 @@ class ApiClient {
   async request<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
     const { token, ...fetchOptions } = options;
     const authToken = token || this.getToken();
+    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -30,7 +38,7 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${authToken}`;
     }
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const response = await fetch(`${this.baseUrl}${normalizedEndpoint}`, {
       ...fetchOptions,
       headers,
     });
