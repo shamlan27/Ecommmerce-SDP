@@ -100,7 +100,7 @@ class AuthController extends Controller
         if ($user) {
             // Mock OTP - Generate and store in cache (expires in 10 minutes)
             $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            DB::table('password_resets')->updateOrInsert(
+            DB::table('password_reset_tokens')->updateOrInsert(
                 ['email' => $user->email],
                 ['token' => $otp, 'created_at' => now()]
             );
@@ -135,7 +135,7 @@ class AuthController extends Controller
         ]);
 
         // Check if OTP exists and is valid
-        $resetRecord = DB::table('password_resets')
+        $resetRecord = DB::table('password_reset_tokens')
             ->where('email', $request->email)
             ->first();
 
@@ -147,7 +147,7 @@ class AuthController extends Controller
 
         // Check if OTP is expired (10 minutes)
         if (now()->diffInMinutes($resetRecord->created_at) > 10) {
-            DB::table('password_resets')->where('email', $request->email)->delete();
+            DB::table('password_reset_tokens')->where('email', $request->email)->delete();
             return response()->json([
                 'message' => 'OTP has expired. Please request a new one.',
             ], 422);
@@ -169,7 +169,7 @@ class AuthController extends Controller
         event(new PasswordReset($user));
 
         // Delete the used OTP
-        DB::table('password_resets')->where('email', $request->email)->delete();
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
         return response()->json([
             'message' => 'Password has been reset successfully. Please sign in.',
