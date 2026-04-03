@@ -175,9 +175,9 @@ export default function RegisterPage() {
             <label className="block text-sm font-semibold mb-1.5 ml-1">Password</label>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
-              <input id="password" type="password" value={form.password} onChange={handleChange} required className="w-full pl-12 pr-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="Minimum 8 chars" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$" title="Include uppercase, lowercase, and at least one number" />
+              <input id="password" type="password" value={form.password} onChange={handleChange} required className="w-full pl-12 pr-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="Minimum 6 chars" pattern=".{6,}" title="Password must be at least 6 characters long" />
             </div>
-            <p className="mt-1 text-xs text-muted">Use at least 8 characters with uppercase, lowercase, and a number.</p>
+            <p className="mt-1 text-xs text-muted">Use at least 6 characters.</p>
           </div>
           <div>
             <label className="block text-sm font-semibold mb-1.5 ml-1">Confirm Password</label>
