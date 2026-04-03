@@ -20,11 +20,12 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      router.push('/');
+      // Don't call setLoading(false) here - let router handle the navigation
+      await router.push('/');
     } catch (err: any) {
       setError(err.data?.message || 'Invalid credentials');
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

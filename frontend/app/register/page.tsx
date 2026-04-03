@@ -14,6 +14,8 @@ const strongPasswordRegex = /^.{6,}$/;
 export default function RegisterPage() {
   const { register } = useAuth();
   const router = useRouter();
+  const [showOTP, setShowOTP] = useState(false);
+  const [otp, setOtp] = useState('');
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -56,6 +58,15 @@ export default function RegisterPage() {
       return setError('Use a valid Sri Lankan phone number (e.g. 0771234567 or +94771234567).');
     }
     setError('');
+    setShowOTP(true);
+  };
+
+  const handleOTPSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp.trim()) {
+      return setError('Please enter OTP');
+    }
+    setError('');
     setLoading(true);
     try {
       await register(form.name, form.email, form.password, form.password_confirmation, form.phone);
@@ -88,6 +99,61 @@ export default function RegisterPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({...form, [e.target.id]: e.target.value});
   };
+
+  if (showOTP) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-background border border-border p-8 rounded-3xl shadow-2xl animate-fade-in relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
+          
+          <div className="relative text-center mb-8">
+            <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-dark rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/30">
+              <Store className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold mb-2">Verify Email</h1>
+            <p className="text-muted text-sm">Enter the OTP sent to<br/>{form.email}</p>
+          </div>
+
+          {error && (
+            <div className="mb-6 p-4 bg-danger/10 text-danger text-sm text-center rounded-xl border border-danger/20 font-medium animate-slide-up">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleOTPSubmit} className="space-y-5 relative z-10">
+            <div>
+              <label className="block text-sm font-semibold mb-1.5 ml-1">Enter OTP</label>
+              <input
+                type="text"
+                value={otp}
+                onChange={e => setOtp(e.target.value)}
+                required
+                className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-center text-lg tracking-widest text-sm"
+                placeholder="000000"
+                maxLength={6}
+              />
+              <p className="mt-2 text-xs text-muted text-center">Enter any number to verify</p>
+            </div>
+
+            <button type="submit" disabled={loading} className="w-full py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-all disabled:opacity-50 btn-press shadow-lg shadow-primary/25">
+              {loading ? 'Verifying...' : 'Verify & Create Account'}
+            </button>
+          </form>
+
+          <button
+            onClick={() => {
+              setShowOTP(false);
+              setOtp('');
+              setError('');
+            }}
+            className="mt-6 w-full py-2 text-primary font-semibold text-sm hover:underline"
+          >
+            Back to Registration
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-4">
