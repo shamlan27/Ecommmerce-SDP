@@ -71,23 +71,27 @@ export default function RegisterPage() {
     try {
       await register(form.name, form.email, form.password, form.password_confirmation, form.phone);
 
-      await api.post<UserType>('/user/complete-profile', {
-        name: form.name,
-        phone: form.phone,
-        payment_preferences: {
-          default_method: form.payment_default_method,
-        },
-        shipping: {
-          name: form.shipping_name || form.name,
-          line1: form.shipping_line1,
-          line2: form.shipping_line2 || null,
-          city: form.shipping_city,
-          state: form.shipping_state,
-          zip: form.shipping_zip,
-          country: form.shipping_country,
+      try {
+        await api.post<UserType>('/user/complete-profile', {
+          name: form.name,
           phone: form.phone,
-        },
-      });
+          payment_preferences: {
+            default_method: form.payment_default_method,
+          },
+          shipping: {
+            name: form.shipping_name || form.name,
+            line1: form.shipping_line1,
+            line2: form.shipping_line2 || null,
+            city: form.shipping_city,
+            state: form.shipping_state,
+            zip: form.shipping_zip,
+            country: form.shipping_country,
+            phone: form.phone,
+          },
+        });
+      } catch (profileError) {
+        console.warn('Profile completion failed after registration:', profileError);
+      }
 
       router.push('/account/dashboard');
     } catch (err: unknown) {
