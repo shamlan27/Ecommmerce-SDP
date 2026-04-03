@@ -98,17 +98,17 @@ class AuthController extends Controller
         $emailHash = sha1($request->email);
 
         if ($user) {
-            $token = Password::createToken($user);
-            $frontendUrl = rtrim((string) env('FRONTEND_URL', 'http://localhost:3000'), '/');
-            $email = urlencode($user->getEmailForPasswordReset());
-            $resetUrl = "{$frontendUrl}/reset-password?token={$token}&email={$email}";
-
-            $accepted = $this->brevoEmail->sendPasswordReset($user, $resetUrl);
+            // Mock OTP - Generate and store in cache (expires in 10 minutes)
+            $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            DB::table('password_resets')->updateOrInsert(
+                ['email' => $user->email],
+                ['token' => $otp, 'created_at' => now()]
+            );
 
             Log::info('Forgot password processed', [
                 'email_hash' => $emailHash,
                 'user_found' => true,
-                'brevo_accepted' => $accepted,
+                'otp_generated' => true,
             ]);
         } else {
             Log::info('Forgot password processed', [
@@ -118,7 +118,7 @@ class AuthController extends Controller
         }
 
         return response()->json([
-            'message' => 'If an account with that email exists, a password reset link has been sent.',
+            'message' => 'If an account with that email exists, an OTP has been sent.',
         ]);
     }
 
@@ -129,28 +129,47 @@ class AuthController extends Controller
         ]);
 
         $request->validate([
-            'token' => 'required|string',
+            'otp' => 'required|string|size:6',
             'email' => 'required|string|email',
             'password' => ['required', 'confirmed', Rules\Password::min(8)->letters()->mixedCase()->numbers()],
         ]);
 
-        $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function (User $user, string $password) {
-                $user->forceFill([
-                    'password' => $password,
-                    'remember_token' => Str::random(60),
-                ])->save();
+        // Check if OTP exists and is valid
+        $resetRecord = DB::table('password_resets')
+            ->where('email', $request->email)
+            ->first();
 
-                event(new PasswordReset($user));
-            }
-        );
-
-        if ($status !== Password::PASSWORD_RESET) {
+        if (!$resetRecord || $resetRecord->token !== $request->otp) {
             return response()->json([
-                'message' => __($status),
+                'message' => 'Invalid OTP.',
             ], 422);
         }
+
+        // Check if OTP is expired (10 minutes)
+        if (now()->diffInMinutes($resetRecord->created_at) > 10) {
+            DB::table('password_resets')->where('email', $request->email)->delete();
+            return response()->json([
+                'message' => 'OTP has expired. Please request a new one.',
+            ], 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'User not found.',
+            ], 422);
+        }
+
+        $user->forceFill([
+            'password' => Hash::make($request->password),
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        event(new PasswordReset($user));
+
+        // Delete the used OTP
+        DB::table('password_resets')->where('email', $request->email)->delete();
 
         return response()->json([
             'message' => 'Password has been reset successfully. Please sign in.',
