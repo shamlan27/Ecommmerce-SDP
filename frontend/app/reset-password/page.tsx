@@ -7,7 +7,7 @@ import api from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
-const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+const strongPasswordRegex = /^.{6,}$/;
 
 function ResetPasswordContent() {
   const router = useRouter();
@@ -25,7 +25,7 @@ function ResetPasswordContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!strongPasswordRegex.test(password)) {
-      setError('Password must include uppercase, lowercase, and at least one number.');
+      setError('Password must be at least 6 characters long.');
       return;
     }
     if (password !== passwordConfirmation) {

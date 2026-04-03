@@ -9,7 +9,7 @@ import type { User as UserType } from '@/lib/types';
 import { Mail, Lock, User, Store, Phone } from 'lucide-react';
 
 const sriLankaPhoneRegex = /^(?:\+94|0)[\s\-]?\d{9,10}$/;
-const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+const strongPasswordRegex = /^.{6,}$/;
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -50,7 +50,7 @@ export default function RegisterPage() {
       return setError('Passwords do not match');
     }
     if (!strongPasswordRegex.test(form.password)) {
-      return setError('Password must include uppercase, lowercase, and at least one number.');
+      return setError('Password must be at least 6 characters long.');
     }
     if (!sriLankaPhoneRegex.test(form.phone.trim())) {
       return setError('Use a valid Sri Lankan phone number (e.g. 0771234567 or +94771234567).');
