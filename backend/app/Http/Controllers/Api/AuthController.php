@@ -34,7 +34,7 @@ class AuthController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => ['required', 'confirmed', Rules\Password::min(8)->letters()->mixedCase()->numbers()],
+            'password' => ['required', 'confirmed', 'min:6'],
             'phone' => 'required|string|max:20',
         ]);
 
@@ -131,7 +131,7 @@ class AuthController extends Controller
         $request->validate([
             'otp' => 'required|string|size:6',
             'email' => 'required|string|email',
-            'password' => ['required', 'confirmed', Rules\Password::min(8)->letters()->mixedCase()->numbers()],
+            'password' => ['required', 'confirmed', 'min:6'],
         ]);
 
         // Check if OTP exists and is valid
