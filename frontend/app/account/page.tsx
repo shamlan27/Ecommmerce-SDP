@@ -108,7 +108,7 @@ export default function AccountPage() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1.5 flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> Phone Number</label>
-            <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} required className="w-full px-4 py-3 border border-border rounded-xl text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" placeholder="0771234567" pattern="^(?:\\+94|0)\\d{9}$" title="Use 0771234567 or +94771234567" />
+            <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} required className="w-full px-4 py-3 border border-border rounded-xl text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" placeholder="0771234567" pattern="^(?:\\+94|0)[\\s\\-]?\\d{9,10}$" title="Use 0771234567 or +94771234567" />
           </div>
           <button type="submit" disabled={saving} className="flex items-center gap-2 px-6 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors btn-press disabled:opacity-50">
             <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save Changes'}

@@ -8,7 +8,7 @@ import api from '@/lib/api';
 import type { User as UserType } from '@/lib/types';
 import { Mail, Lock, User, Store, Phone } from 'lucide-react';
 
-const sriLankaPhoneRegex = /^(?:\+94|0)\d{9}$/;
+const sriLankaPhoneRegex = /^(?:\+94|0)[\s\-]?\d{9,10}$/;
 const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 export default function RegisterPage() {
@@ -127,7 +127,7 @@ export default function RegisterPage() {
             <label className="block text-sm font-semibold mb-1.5 ml-1">Phone Number</label>
             <div className="relative">
               <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
-              <input id="phone" type="tel" value={form.phone} onChange={handleChange} required className="w-full pl-12 pr-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="0771234567" pattern="^(?:\\+94|0)\\d{9}$" title="Use 0771234567 or +94771234567" />
+              <input id="phone" type="tel" value={form.phone} onChange={handleChange} required className="w-full pl-12 pr-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="0771234567" pattern="^(?:\\+94|0)[\\s\\-]?\\d{9,10}$" title="Use 0771234567 or +94771234567" />
             </div>
           </div>
           <div>

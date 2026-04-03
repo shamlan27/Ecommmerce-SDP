@@ -10,7 +10,7 @@ import type { PaymentIntentResponse } from '@/lib/types';
 import { formatCurrency, getImageUrl } from '@/lib/utils';
 import { CheckCircle, CreditCard, MapPin, Truck } from 'lucide-react';
 
-const sriLankaPhoneRegex = /^(?:\+94|0)\d{9}$/;
+const sriLankaPhoneRegex = /^(?:\+94|0)[\s\-]?\d{9,10}$/;
 
 interface CreatedOrder {
   id: number;
@@ -152,7 +152,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-semibold mb-1.5 ml-1">Phone Number</label>
-                    <input value={form.shipping_phone} onChange={e => setForm({...form, shipping_phone: e.target.value})} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/50 text-sm" placeholder="0771234567" pattern="^(?:\\+94|0)\\d{9}$" title="Use 0771234567 or +94771234567" />
+                    <input value={form.shipping_phone} onChange={e => setForm({...form, shipping_phone: e.target.value})} className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/50 text-sm" placeholder="0771234567" pattern="^(?:\\+94|0)[\\s\\-]?\\d{9,10}$" title="Use 0771234567 or +94771234567" />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-semibold mb-1.5 ml-1">Address</label>
